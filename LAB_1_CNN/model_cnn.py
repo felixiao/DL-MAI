@@ -23,6 +23,7 @@ class Config():
         img_width = 256
         channels = 3
         num_classes = 29
+        seed = 123
         path = '../datasets/'
 
 def parse_arguments():
@@ -93,14 +94,18 @@ class MAMe_CNN():
         def Build_Network(self):
                 self.model = tf.keras.Sequential([
                         tf.keras.layers.Rescaling(1./255,input_shape=self.input_shape),
+                        # tf.keras.layers.RandomBrightness(factor=0.2),
+                        tf.keras.layers.RandomContrast(factor=0.2,seed=self.param.seed),
+                        tf.keras.layers.RandomRotation(factor=0.2,fill_mode="reflect",seed=self.param.seed),
+                        tf.keras.layers.RandomFlip(mode="horizontal_and_vertical",seed=self.param.seed),
                         tf.keras.layers.Conv2D(32, 3, activation='relu'),
                         tf.keras.layers.MaxPooling2D(),
-                        tf.keras.layers.Conv2D(32, 3, activation='relu'),
+                        tf.keras.layers.Conv2D(64, 3, activation='relu'),
                         tf.keras.layers.MaxPooling2D(),
-                        tf.keras.layers.Conv2D(32, 3, activation='relu'),
+                        tf.keras.layers.Conv2D(128, 3, activation='relu'),
                         tf.keras.layers.MaxPooling2D(),
                         tf.keras.layers.Flatten(),
-                        tf.keras.layers.Dense(128, activation='relu'),
+                        # tf.keras.layers.Dense(1024, activation='relu'),
                         tf.keras.layers.Dense(self.param.num_classes, activation=(tf.nn.softmax))
                 ])
 
