@@ -154,3 +154,5 @@ LAB_1_CNN/.DS_Store
 *.npy
 .DS_Store
 *.zip
+*.hdf5
+*.hdf5

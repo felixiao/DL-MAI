@@ -1,0 +1,61 @@
+unload bsc/commands (PATH, MANPATH) 
+unload CUDA/9.1 (PATH, MANPATH, LD_LIBRARY_PATH, LIBRARY_PATH, C_INCLUDE_PATH,
+CPLUS_INCLUDE_PATH, CUDA_HOME, CUDA_VERSION, CUDA_INC, CUDA_INSTALL_PATH) 
+unload OPENMPI/3.0.0 (PATH, MANPATH, LD_LIBRARY_PATH, LIBRARY_PATH,
+PKG_CONFIG_PATH, C_INCLUDE_PATH, CPLUS_INCLUDE_PATH, MPI, MPI_V) 
+unload GCC/6.4.0 (PATH, MANPATH, INFOPATH, LD_LIBRARY_PATH, LIBRARY_PATH,
+C_INCLUDE_PATH, CPLUS_INCLUDE_PATH, STD COMP VARS) 
+load GCC/8.3.0 (PATH, MANPATH, INFOPATH, LIBRARY_PATH, LD_LIBRARY_PATH, STD
+COMP VARS) 
+load FFMPEG/4.2.1 (PATH, LIBRARY_PATH, PKG_CONFIG_PATH, C_INCLUDE_PATH,
+CPLUS_INCLUDE_PATH) 
+load CUDA/10.2 (PATH, MANPATH, LD_LIBRARY_PATH, LIBRARY_PATH, C_INCLUDE_PATH,
+CPLUS_INCLUDE_PATH, CUDA_HOME, CUDA_VERSION, CUDA_INC, CUDA_INSTALL_PATH) 
+load CUDNN/7.6.4 (LD_LIBRARY_PATH, LIBRARY_PATH, C_INCLUDE_PATH,
+CPLUS_INCLUDE_PATH, CUDNN_LIB_DIR, CUDNN_LIBRARY, CUDNN_INCLUDE_DIR) 
+load NCCL/2.4.8 (LD_LIBRARY_PATH, LIBRARY_PATH, C_INCLUDE_PATH,
+CPLUS_INCLUDE_PATH) 
+load TENSORRT/6.0.1 (PATH, LD_LIBRARY_PATH, LIBRARY_PATH, C_INCLUDE_PATH,
+CPLUS_INCLUDE_PATH) 
+load OPENMPI/4.0.1 (PATH, MANPATH, LD_LIBRARY_PATH, LIBRARY_PATH,
+PKG_CONFIG_PATH, C_INCLUDE_PATH, CPLUS_INCLUDE_PATH, MPI, MPI_V) 
+load ATLAS/3.10.3 (LD_LIBRARY_PATH, LIBRARY_PATH, C_INCLUDE_PATH,
+CPLUS_INCLUDE_PATH) 
+load SCALAPACK/2.0.2 (LD_LIBRARY_PATH, LIBRARY_PATH, PKG_CONFIG_PATH) 
+load FFTW/3.3.8 (PATH, MANPATH, LD_LIBRARY_PATH, LIBRARY_PATH, C_INCLUDE_PATH,
+CPLUS_INCLUDE_PATH, PKG_CONFIG_PATH) 
+load SZIP/2.1.1 (LD_LIBRARY_PATH, LIBRARY_PATH, C_INCLUDE_PATH,
+CPLUS_INCLUDE_PATH) 
+load OPENCV/4.1.1 (PATH, LD_LIBRARY_PATH, LIBRARY_PATH, C_INCLUDE_PATH,
+CPLUS_INCLUDE_PATH, PYTHONPATH) 
+load PYTHON/3.7.4_ML (PATH, MANPATH, LD_LIBRARY_PATH, LIBRARY_PATH,
+PKG_CONFIG_PATH, C_INCLUDE_PATH, CPLUS_INCLUDE_PATH, PYTHONHOME, PYTHONPATH,
+OMPI_MCA_mpi_warn_on_fork, PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION,
+PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION_VERSION) 
+load TENSORFLOW/2.6.0 (PATH, PYTHONPATH) 
+unload NCCL/2.4.8 (LD_LIBRARY_PATH, LIBRARY_PATH, C_INCLUDE_PATH,
+CPLUS_INCLUDE_PATH) 
+load NCCL/2.9.9 (LD_LIBRARY_PATH, LIBRARY_PATH, C_INCLUDE_PATH,
+CPLUS_INCLUDE_PATH) 
+2022-10-12 08:34:10.169857: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1510] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 14676 MB memory:  -> device: 0, name: Tesla V100-SXM2-16GB, pci bus id: 0004:04:00.0, compute capability: 7.0
+2022-10-12 08:34:15.120221: I tensorflow/compiler/mlir/mlir_graph_optimization_pass.cc:185] None of the MLIR Optimization Passes are enabled (registered 2)
+2022-10-12 08:34:16.442906: I tensorflow/stream_executor/cuda/cuda_dnn.cc:369] Loaded cuDNN version 7604
+Traceback (most recent call last):
+  File "/apps/PYTHON/3.7.4_ML/lib/python3.7/shutil.py", line 566, in move
+    os.rename(src, real_dst)
+FileNotFoundError: [Errno 2] No such file or directory: 'test_mame_6376446.out' -> 'result/MAMe_v1/run_3/test_mame_6376446.err'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "model_cnn.py", line 220, in <module>
+    mame_cnn.Train(args.epochs)
+  File "model_cnn.py", line 182, in Train
+    shutil.move(out_name,self.RUN_ITER+err_name.split(os.sep)[-1])
+  File "/apps/PYTHON/3.7.4_ML/lib/python3.7/shutil.py", line 580, in move
+    copy_function(src, real_dst)
+  File "/apps/PYTHON/3.7.4_ML/lib/python3.7/shutil.py", line 266, in copy2
+    copyfile(src, dst, follow_symlinks=follow_symlinks)
+  File "/apps/PYTHON/3.7.4_ML/lib/python3.7/shutil.py", line 120, in copyfile
+    with open(src, 'rb') as fsrc:
+FileNotFoundError: [Errno 2] No such file or directory: 'test_mame_6376446.out'
