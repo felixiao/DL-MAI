@@ -122,11 +122,15 @@ class MAMe_CNN():
                         # RandomContrast(factor=0.2,seed=self.param.seed),
                         # RandomRotation(factor=0.2,fill_mode="reflect",seed=self.param.seed),
                         # RandomFlip(mode="horizontal_and_vertical",seed=self.param.seed),
-                        tf.keras.layers.Conv2D(16, 3, activation='relu'),
+                        tf.keras.layers.Conv2D(32, 7, activation='relu'),
                         tf.keras.layers.MaxPooling2D(),
-                        tf.keras.layers.Conv2D(32, 3, activation='relu'),
+                        tf.keras.layers.Conv2D(64, 7, activation='relu'),
                         tf.keras.layers.MaxPooling2D(),
-                        tf.keras.layers.Conv2D(64, 3, activation='relu'),
+                        tf.keras.layers.Conv2D(128, 7, activation='relu'),
+                        tf.keras.layers.MaxPooling2D(),
+                        tf.keras.layers.Conv2D(256, 7, activation='relu'),
+                        tf.keras.layers.MaxPooling2D(),
+                        tf.keras.layers.Conv2D(512, 7, activation='relu'),
                         tf.keras.layers.MaxPooling2D(),
                         tf.keras.layers.Flatten(),
                         tf.keras.layers.Dense(512, activation='relu'),
@@ -134,7 +138,7 @@ class MAMe_CNN():
                 ])
 
                 self.model.compile(
-                        optimizer=tf.keras.optimizers.SGD(learning_rate=0.01),
+                        optimizer=tf.keras.optimizers.Adamax(),
                         loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
                         metrics=['accuracy'])
 
@@ -159,7 +163,7 @@ class MAMe_CNN():
 
                 progbar_logger = tf.keras.callbacks.ProgbarLogger(count_mode='steps')
 
-                # reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=0.001)
+                reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=0.0001)
 
                 train_ds = self.Load_Data(seed=123,mode='Train')
 
@@ -171,7 +175,7 @@ class MAMe_CNN():
                         epochs=epochs,
                         use_multiprocessing=True,
                         workers=10,
-                        callbacks=[model_checkpoint_callback,csv_logger,progbar_logger]
+                        callbacks=[model_checkpoint_callback,csv_logger,progbar_logger,reduce_lr]
                 )
                 print('Train Time: ',time.time()-curt)
                 

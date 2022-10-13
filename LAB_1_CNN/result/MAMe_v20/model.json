@@ -42,8 +42,8 @@
                     "dtype": "float32",
                     "filters": 16,
                     "kernel_size": [
-                        3,
-                        3
+                        7,
+                        7
                     ],
                     "strides": [
                         1,
@@ -101,8 +101,8 @@
                     "dtype": "float32",
                     "filters": 32,
                     "kernel_size": [
-                        3,
-                        3
+                        7,
+                        7
                     ],
                     "strides": [
                         1,
@@ -160,8 +160,8 @@
                     "dtype": "float32",
                     "filters": 64,
                     "kernel_size": [
-                        3,
-                        3
+                        7,
+                        7
                     ],
                     "strides": [
                         1,
