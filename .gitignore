@@ -161,3 +161,4 @@ LAB_1_CNN/.DS_Store
 *.pb
 *.index
 *.data-00000-of-00001
+LAB_1_CNN/result/MAMe_v0/weights.hdf5
