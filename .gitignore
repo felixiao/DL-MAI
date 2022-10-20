@@ -156,3 +156,8 @@ LAB_1_CNN/.DS_Store
 *.zip
 *.hdf5
 *.hdf5
+*.hdf5
+*.hdf5
+*.pb
+*.index
+*.data-00000-of-00001

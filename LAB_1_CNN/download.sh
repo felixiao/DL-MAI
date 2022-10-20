@@ -1,6 +1,3 @@
-# -n 名称
-# -a 作者
-# -h 帮助
 if [[ -z $1 ]];
 then 
     echo "Download All Results..."

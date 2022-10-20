@@ -1,0 +1,3 @@
+train time: 3028.8975
+test loss: 1.2447277307510376
+test accuracy: 0.6114197969436646
