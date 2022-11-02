@@ -1,5 +1,3 @@
-from distutils.spawn import find_executable
-from multiprocessing.dummy import Pool
 import pandas as pd
 import numpy as np
 import os
@@ -9,39 +7,10 @@ import matplotlib.pyplot as plt
 import time
 import glob
 import shutil
-import json
 import random
 import tensorflow as tf
 #Define the NN architecture
-from keras.models import Sequential,model_from_json
-from keras.layers import Dense, Activation, Conv2D, MaxPooling2D, Flatten,Rescaling
-from keras.losses import CategoricalCrossentropy
 from keras.utils.vis_utils import plot_model
-
-
-class Resnet_Block(tf.keras.Model):
-    def __init__(self, filters=(32,32),kernel_sizes=(3,3)):
-        super(Resnet_Block, self).__init__(name='')
-        filters1, filters2 = filters
-        size1, size2 = kernel_sizes
-
-        self.conv2a = tf.keras.layers.Conv2D(filters1, size1, padding='same')
-        self.bn2a = tf.keras.layers.BatchNormalization()
-
-        self.conv2b = tf.keras.layers.Conv2D(filters2, size2, padding='same')
-        self.bn2b = tf.keras.layers.BatchNormalization()
-
-    def call(self, input_tensor, training=False):
-        x = self.conv2a(input_tensor)
-        x = self.bn2a(x, training=training)
-        x = tf.nn.relu(x)
-
-        x = self.conv2b(x)
-        x = self.bn2b(x, training=training)
-
-        x += input_tensor
-        return  tf.nn.relu(x)
-
 
 class MAMe_CNN():
     def __init__(self, param):
@@ -51,11 +20,12 @@ class MAMe_CNN():
         np.random.seed(param.seed)
         random.seed(param.seed)
 
-    def cnn_block(self,x, channels=32,BN=True,activation='relu', Pooling='Max',kernel_size=3, cn_strides=1,cn_padding = 'valid',pool_size=2,pool_strides=2,pool_padding='valid'):
+    def cnn_block(self,x, channels=32,BN=True,axis=-1,activation='relu', Pooling='Max',kernel_size=3, cn_strides=1,cn_padding = 'valid',pool_size=2,pool_strides=2,pool_padding='valid'):
         x = tf.keras.layers.Conv2D(channels, kernel_size=kernel_size, strides=cn_strides, padding=cn_padding)(x)
         if BN:
-            x = tf.keras.layers.BatchNormalization(axis=3)(x)
-        x = tf.keras.layers.Activation(activation)(x)
+            x = tf.keras.layers.BatchNormalization(axis=axis)(x)
+        if activation:
+            x = tf.keras.layers.Activation(activation)(x)
         if Pooling == 'Max':
             x = tf.keras.layers.MaxPool2D(pool_size=pool_size, strides=pool_strides, padding=pool_padding)(x)
         elif Pooling == 'Avg':
@@ -64,16 +34,18 @@ class MAMe_CNN():
     
     def input_block(self,x,agu_flip=True,agu_rot=True):
         x = tf.keras.layers.Rescaling(1./255)(x)
-        # x = tf.keras.layers.ZeroPadding2D((3, 3))(x)
+        x = tf.keras.layers.ZeroPadding2D((3, 3))(x)
         if agu_flip:
             x = tf.keras.layers.RandomFlip(seed=self.param.seed)(x)
         if agu_rot:
             x = tf.keras.layers.RandomRotation(seed=self.param.seed,factor=0.2, fill_mode='reflect')(x)
         return x
 
-    def output_block(self,x,AvgPool=False,Flatten=False,GAP=True,FC=None,Activation=tf.nn.softmax):
-        if AvgPool:
+    def output_block(self,x,Pooling='Avg',Flatten=False,GAP=True,FC=None,activation=tf.nn.softmax):
+        if Pooling=='Avg':
             x = tf.keras.layers.AveragePooling2D((2,2), padding = 'same')(x)
+        elif Pooling == 'Max':
+            x = tf.keras.layers.MaxPooling2D((2,2), padding = 'same')(x)
         if Flatten:
             x = tf.keras.layers.Flatten()(x)
         if GAP:
@@ -81,88 +53,78 @@ class MAMe_CNN():
         if FC:
             for s in FC:
                 x = tf.keras.layers.Dense(s, activation = 'relu')(x)
-        x = tf.keras.layers.Dense(self.param.num_classes, activation = Activation)(x)
+        x = tf.keras.layers.Dense(self.param.num_classes, activation = activation)(x)
         return x
 
-    def identity_block(self,x, filters=[16,32],kernel_size=3):
+
+    def res_block(self,x, filters=[32,32],kernel_size=3, downsample=None):
+        """_summary_
+
+        Args:
+            x (_type_): the inputs
+            filters (list, optional): list of number of filters for each conv layers. Defaults to [32,32].
+            kernel_size (int, optional): kernel size for all conv layers. Defaults to 3.
+            downsample (_type_, optional): use downsample or not. Defaults to None, also 'Conv', 'MaxPool' .
+
+        Returns:
+            _type_: the outputs
+        """
         # copy tensor to variable called x_skip
         x_skip = x
-        # Layer 1
-        x = tf.keras.layers.Conv2D(filters[0], kernel_size, padding = 'same')(x)
-        x = tf.keras.layers.BatchNormalization(axis=3)(x)
-        x = tf.keras.layers.Activation('relu')(x)
-        # Layer 2
-        x = tf.keras.layers.Conv2D(filters[1], kernel_size, padding = 'same')(x)
-        x = tf.keras.layers.BatchNormalization(axis=3)(x)
-        x = tf.keras.layers.Activation('relu')(x)
+        for i,f in enumerate(filters):
+            # no activation for the last conv block
+            x = self.cnn_block(x,channels=f,kernel_size=kernel_size,cn_padding='same',cn_strides=2 if downsample=='Conv' and i ==0 else 1,
+                BN=True,activation='relu' if i != len(filters)-1 else None,
+                Pooling='Max' if i ==0 and downsample=='MaxPool' else None, pool_size=2,pool_strides= 2)
+
+        if downsample == 'MaxPool':
+            # Downsampling with MaxPool2D
+            x_skip = tf.keras.layers.MaxPool2D(pool_size=2,strides=2)(x_skip)
+        elif downsample == 'Conv':
+            # Processing Residue with conv(1,1)
+            x_skip = tf.keras.layers.Conv2D(filters[-1], 1, strides = 2)(x_skip)
+
         # Add Residue
         x = tf.keras.layers.Add()([x, x_skip])
         x = tf.keras.layers.Activation('relu')(x)
         return x
 
-    def maxpool_block(self,x,filters=[16,32],kernel_size=3):
-        x_skip = x
-        # Layer 1
-        x = tf.keras.layers.Conv2D(filters[0], kernel_size, padding = 'same', strides = (2,2))(x)
-        x = tf.keras.layers.BatchNormalization(axis=3)(x)
-        x = tf.keras.layers.Activation('relu')(x)
-        # Layer 2
-        x = tf.keras.layers.Conv2D(filters[1], kernel_size, padding = 'same')(x)
-        x = tf.keras.layers.BatchNormalization(axis=3)(x)
-        x = tf.keras.layers.Activation('relu')(x)
-        # Downsampling with MaxPool2D
-        x = tf.keras.layers.MaxPool2D(pool_size=2,strides=2)(x)
-
-        # Add Residue
-        x = tf.keras.layers.Add()([x, x_skip])
-        return x
-
-    def convolutional_block(self,x, filters=[16,32],kernel_size=3):
-        # copy tensor to variable called x_skip
-        x_skip = x
-        # Layer 1
-        x = tf.keras.layers.Conv2D(filters[0], kernel_size, padding = 'same', strides = (2,2))(x)
-        x = tf.keras.layers.BatchNormalization(axis=3)(x)
-        x = tf.keras.layers.Activation('relu')(x)
-        # Layer 2
-        x = tf.keras.layers.Conv2D(filters[1], kernel_size, padding = 'same')(x)
-        x = tf.keras.layers.BatchNormalization(axis=3)(x)
-        x = tf.keras.layers.Activation('relu')(x)
-        # Processing Residue with conv(1,1)
-        x_skip = tf.keras.layers.Conv2D(filters[1], 1, strides = (2,2))(x_skip)
-        # Add Residue
-        x = tf.keras.layers.Add()([x, x_skip])
-        x = tf.keras.layers.Activation('relu')(x)
-        return x
     
     def Residue_Model(self):
-        # Step 1 (Setup Input Layer)
         x_input = tf.keras.layers.Input(self.param.input_shape)
-        
-        # Layer 1
+        # Layer 1 Input and Agumentaion Layers
         x = self.input_block(x_input)
 
         # Layer 2 (Initial Conv layer along with maxPool)
-        x = self.cnn_block(x,channels=64, kernel_size=7, cn_strides=1, cn_padding='same',
-            BN=True,activation='relu',
-            Pooling='Max',pool_size=2,pool_strides= 2,pool_padding = 'same')
+        x = self.cnn_block(x,channels=64, kernel_size=7, cn_strides=2, cn_padding='same',
+            BN=True,axis=-1,activation='relu',
+            Pooling='Max',pool_size=3,pool_strides= 2,pool_padding = 'same')
 
-        # Layer 3 Residuel block 1
-        # x = self.identity_block(x, [64,64])
-        # Layer 4 Residuel block 2
-        x = self.convolutional_block(x, [64,64])
-        # Layer 5 Residuel block 3
-        # x = self.identity_block(x, [128,128])
-        # Layer 6 Residuel block 4
-        x = self.convolutional_block(x, [128,128])
-        x = self.convolutional_block(x, [256,256])
-        # Layer 7 Residuel block 5
-        # x = self.identity_block(x, [128,128])
+        # Residuel blocks 
+        x = self.res_block(x, [64,64])
+        x = self.res_block(x, [64,64])
+        x = self.res_block(x, [64,64])
+
+        x = self.res_block(x, [128,128],downsample='Conv')
+        x = self.res_block(x, [128,128])
+        x = self.res_block(x, [128,128])
+        x = self.res_block(x, [128,128])
+
+        x = self.res_block(x, [256,256],downsample='Conv')
+        x = self.res_block(x, [256,256])
+        x = self.res_block(x, [256,256])
+        x = self.res_block(x, [256,256])
+        x = self.res_block(x, [256,256])
+        x = self.res_block(x, [256,256])
+
+        x = self.res_block(x, [512,512],downsample='Conv')
+        x = self.res_block(x, [512,512])
+        x = self.res_block(x, [512,512])
         
-        # Layer 8 output block
-        x = self.output_block(x,AvgPool=True,Flatten=True,GAP = False,FC=[512])
+        # Output block
+        x = self.output_block(x,Pooling=self.param.out_Pool,Flatten=self.param.out_Flatten,GAP = self.param.out_GAP,FC=None if self.param.out_FC==0 else [self.param.out_FC])
 
-        model = tf.keras.models.Model(inputs = x_input, outputs = x, name = "ResNet_6")
+        model = tf.keras.models.Model(inputs = x_input, outputs = x, name = "ResNet_34")
         return model
 
     def CNN_Model(self):
@@ -179,16 +141,18 @@ class MAMe_CNN():
             BN=True,activation='relu',
             Pooling='Max',pool_size=2,pool_strides= 2,pool_padding = 'valid')
 
-        x = self.output_block(x,AvgPool=False,Flatten=False,GAP = True,FC=None)
+        x = self.output_block(x,Pooling=self.param.out_Pool,Flatten=self.param.out_Flatten,GAP = self.param.out_GAP,FC=None if self.param.out_FC==0 else [self.param.out_FC])
         model = tf.keras.models.Model(inputs = x_input, outputs = x, name = "CNN_3")
         return model
 
     def Build_Network(self):
         # self.model = self.CNN_Model()
         self.model = self.Residue_Model()
-
+        optimizer = tf.keras.optimizers.Adam(learning_rate=self.param.lr)
+        if self.param.optimizer == 'SGD':
+            optimizer = tf.keras.optimizers.SGD(learning_rate=self.param.lr)
         self.model.compile(
-            optimizer=tf.keras.optimizers.Adam(learning_rate=self.param.lr),
+            optimizer=optimizer,
             loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
             metrics=['accuracy'])
         
@@ -211,7 +175,17 @@ class MAMe_CNN():
     def Load_Model(self,loadweight=False):
         self.LoadIter()
         if loadweight:
-            self.model = tf.keras.models.load_model(self.RUN_ITER+'Model')
+            self.model = tf.keras.models.model_from_json(open(f'{self.param.result}model_{self.param.version}.json').read())
+            self.model.load_weights(self.RUN_ITER+'weights.hdf5')
+
+            optimizer = tf.keras.optimizers.Adam(learning_rate=self.param.lr)
+            if self.param.optimizer == 'SGD':
+                optimizer = tf.keras.optimizers.SGD(learning_rate=self.param.lr)
+            self.model.compile(
+                optimizer=optimizer,
+                loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
+                metrics=['accuracy'])
+            # self.model = tf.keras.models.load_model(self.RUN_ITER+'Weights.hdf5')
 
     def Load_Data(self,mode='Train'):
         # Use Cache to increase efficiency
@@ -274,7 +248,7 @@ class MAMe_CNN():
             monitor='val_accuracy',
             mode='max',
             save_best_only=True)
-        # tb_callback = tf.keras.callbacks.TensorBoard(self.M_NAME+'logs', update_freq=1)
+        # tb_callback = tf.keras.callbacks.TensorBoard(self.RUN_ITER+'logs', update_freq=1)
         csv_logger = tf.keras.callbacks.CSVLogger(self.RUN_ITER+f'history{"_finetune" if self.param.finetune else ""}.csv')
         progbar_logger = tf.keras.callbacks.ProgbarLogger(count_mode='steps')
         reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=1e-7)
@@ -282,7 +256,7 @@ class MAMe_CNN():
         train_ds = self.Load_Data(mode='Train')
         val_ds = self.Load_Data(mode='Val')
         curt = time.time()
-        history = self.model.fit(
+        self.history = self.model.fit(
                 x=train_ds,
                 validation_data=val_ds,
                 epochs=self.param.epoch,
@@ -294,8 +268,8 @@ class MAMe_CNN():
         print(f'Train Time: {self.Train_Time:.4f}')
         self.model.summary()
 
-        self.Show_Results(history)
-        self.Show_Results(history,'loss')
+        self.Show_Results()
+        self.Show_Results('loss')
         
         out_name = glob.glob('*.out')[0]
         shutil.copy2(out_name,self.RUN_ITER+out_name.split(os.sep)[-1][:-4]+'.txt')
@@ -317,9 +291,9 @@ class MAMe_CNN():
             result.write(str(self.iter))
             result.close()
 
-    def Show_Results(self,history,acc_loss='accuracy'):
-        plt.plot(history.history[acc_loss])
-        plt.plot(history.history['val_'+acc_loss])
+    def Show_Results(self,acc_loss='accuracy'):
+        plt.plot(self.history.history[acc_loss])
+        plt.plot(self.history.history['val_'+acc_loss])
         ft = ' FineTune' if self.param.finetune else ''
         plt.title(f'Model v{self.param.version}{ft} {acc_loss}')
         plt.ylabel(acc_loss)
@@ -328,9 +302,12 @@ class MAMe_CNN():
         plt.savefig(self.RUN_ITER+f'{acc_loss}_r{self.iter}{ft}.jpg')
         plt.close()
 
-    def Evaluate(self):
+    def Evaluate(self,use_best=True):
+        if use_best:
+            self.model.load_weights(self.RUN_ITER+'weights.hdf5')
+        csv_logger = tf.keras.callbacks.CSVLogger(self.RUN_ITER+f'test{"_finetune" if self.param.finetune else ""}.csv')
         test_ds = self.Load_Data(mode='Test')
-        score = self.model.evaluate(x=test_ds,verbose=0)
+        score = self.model.evaluate(x=test_ds,verbose=1,workers=20,use_multiprocessing=True,callbacks=[csv_logger])
         
         print('test loss:', score[0])
         print('test accuracy:', score[1])
@@ -338,5 +315,3 @@ class MAMe_CNN():
         with open(RUN_ITER, 'w') as result:
             result.write(f'train time: {self.Train_Time:.4f}\ntest loss: {score[0]}\ntest accuracy: {score[1]}\n')
             result.close()
-
-        

@@ -7,7 +7,6 @@
 import configparser
 from model_mame import MAMe_CNN
 import os
-# import tensorflow as tf
 import glob
 
 class Param():
@@ -24,6 +23,11 @@ class Param():
         self.runs       = int(config['MAMe']['runs'])
         self.epoch      = int(config['MAMe']['epoch'])
         self.lr         = float(config['MAMe']['lr'])
+        self.optimizer  = config['MAMe']['optimizer']
+        self.out_GAP    = config.getboolean('MAMe','out_GAP')
+        self.out_Flatten= config.getboolean('MAMe','out_Flatten')
+        self.out_Pool   = None if config['MAMe']['out_Pool']=='none' else config['MAMe']['out_Pool']
+        self.out_FC     = int(config['MAMe']['out_FC'])
         
         self.iter       = 1
 
@@ -36,10 +40,8 @@ class Param():
         self.result     = config['PATH']['result']+str(self.version)+os.sep
 
         self.build  = config.getboolean('System', 'build')
-        self.load   = config.getboolean('System', 'load')
         self.train  = config.getboolean('System', 'train')
         self.test   = config.getboolean('System', 'test')
-        self.local  = config.getboolean('System', 'local')
         self.finetune  = config.getboolean('System', 'finetune')
         self.finetune_iter = int(config['System']['finetune_iter'])
 
@@ -50,8 +52,9 @@ if __name__ == '__main__':
 
     if param.build and param.train:
         while param.iter <= param.runs:
-            print(f'##################### Run {param.iter}/{param.runs}:')
-            print('Build Network')
+            print(f'##################### V{param.version} Run {param.iter}/{param.runs}   #####################')
+            print(f'Param: \n\tBatchSize: {param.batch_size}\n\tOptimizer: {param.optimizer}\n\tLR:        {param.lr}\n\tEpoch:     {param.epoch}\n\tOut_Pool:  {param.out_Pool}\n\tOut_Flat:  {param.out_Flatten}\n\tOut_GAP:   {param.out_GAP}\n\tOut_FC:    {param.out_FC}')
+            print('##################### Build Network #####################')
             mame_model = MAMe_CNN(param)
             mame_model.Build_Network()
             mame_model.Save_Model()
@@ -59,6 +62,7 @@ if __name__ == '__main__':
             param.iter += 1
             if param.test:
                 mame_model.Evaluate()
+            print(f'End Running @ {param.version}-{param.iter}')
         out_name = glob.glob('*.out')[0]
         os.remove(out_name)
         err_name = glob.glob('*.err')[0]
@@ -68,30 +72,17 @@ if __name__ == '__main__':
         mame_model = MAMe_CNN(param)
         mame_model.Build_Network()
         mame_model.Save_Model()
-    elif param.load and param.train:
-        while param.iter <= param.runs:
-            print(f'##################### Run {param.iter}/{param.runs}:')
-            print('Load Network')
-            mame_model = MAMe_CNN(param)
-            mame_model.Load_Model()
-            mame_model.Save_Model()
-            mame_model.Train()
-            param.iter += 1
-            if param.test:
-                mame_model.Evaluate()
-        out_name = glob.glob('*.out')[0]
-        os.remove(out_name)
-        err_name = glob.glob('*.err')[0]
-        os.remove(err_name)
     elif param.finetune:
-        print(f'##################### Run FineTune @ Iter = {param.finetune_iter}:')
-        print('Init')
+        print(f'##################### V{param.version} Run @{param.finetune_iter}      #####################')
+        print(f'Param: \n\tBatchSize: {param.batch_size}\n\tOptimizer: {param.optimizer}\n\tLR:        {param.lr}\n\tEpoch:     {param.epoch}\n\tOut_Pool:  {param.out_Pool}\n\tOut_Flat:  {param.out_Flatten}\n\tOut_GAP:   {param.out_GAP}\n\tOut_FC:    {param.out_FC}')
+        print('##################### Finetune Network #####################')
         mame_model = MAMe_CNN(param)
         print('Load Model and Weights')
         mame_model.Load_Model(loadweight=True)
         mame_model.Train()
         if param.test:
             mame_model.Evaluate()
+        print(f'End Running @ {param.version}-{param.finetune_iter}')
         out_name = glob.glob('*.out')[0]
         os.remove(out_name)
         err_name = glob.glob('*.err')[0]
