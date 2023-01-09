@@ -1,0 +1,5 @@
+[1673087336.607815] [p9r3n02:70305:0]         mxm.c:196  MXM  WARN  The 'ulimit -s' on the system is set to 'unlimited'. This may have negative performance implications. Please set the stack size to the default value (10240) 
+[1673087336.647383] [p9r3n02:70305:0]         mxm.c:196  MXM  WARN  The 'ulimit -s' on the system is set to 'unlimited'. This may have negative performance implications. Please set the stack size to the default value (10240) 
+W: [0.3] b: [-0.3] loss: 23.660002
+W: [0.3] b: [-0.3] loss: 23.660002
+W: [0.3] b: [-0.3] loss: 23.660002

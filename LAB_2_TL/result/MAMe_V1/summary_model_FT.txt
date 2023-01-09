@@ -1,0 +1,30 @@
+Model: "MAMe"
+___________________________________________________________________________________________________________________________________
+ Layer (type)                                   Output Shape              Param #         Trainable                     Trainable
+===================================================================================================================================
+ input_4 (InputLayer)                           [(None, 224, 224, 3)]     0               Y                             Trainable
+                                                                                                                                   
+ resizing_1 (Resizing)                          (None, 224, 224, 3)       0               Y                             Trainable
+                                                                                                                                   
+ random_flip_1 (RandomFlip)                     (None, 224, 224, 3)       0               Y                             Trainable
+                                                                                                                                   
+ random_rotation_1 (RandomRotation)             (None, 224, 224, 3)       0               Y                             Trainable
+                                                                                                                                   
+ tf.math.truediv_1 (TFOpLambda)                 (None, 224, 224, 3)       0               Y                             Trainable
+                                                                                                                                   
+ tf.math.subtract_1 (TFOpLambda)                (None, 224, 224, 3)       0               Y                             Trainable
+                                                                                                                                   
+ inception_resnet_v2 (Functional)               (None, 5, 5, 1536)        54336736        Y                             Trainable
+                                                                                                                                   
+ global_average_pooling2d_1 (GlobalAveragePooli  (None, 1536)             0               Y                             Trainable
+ ng2D)                                                                                                                  
+                                                                                                                                   
+ dropout_1 (Dropout)                            (None, 1536)              0               Y                             Trainable
+                                                                                                                                   
+ Predictions (Dense)                            (None, 29)                44573           Y                             Trainable
+                                                                                                                                   
+===================================================================================================================================
+Total params: 54,381,309
+Trainable params: 54,320,765
+Non-trainable params: 60,544
+___________________________________________________________________________________________________________________________________

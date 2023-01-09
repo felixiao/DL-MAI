@@ -1,0 +1,11 @@
+[1673117704.220897] [p9r3n04:37638:0]         mxm.c:196  MXM  WARN  The 'ulimit -s' on the system is set to 'unlimited'. This may have negative performance implications. Please set the stack size to the default value (10240) 
+[1673117704.262405] [p9r3n04:37638:0]         mxm.c:196  MXM  WARN  The 'ulimit -s' on the system is set to 'unlimited'. This may have negative performance implications. Please set the stack size to the default value (10240) 
+TRAINING
+ERROR CHECK
+TRAINING
+ERROR CHECK
+TRAINING
+ERROR CHECK
+GD test loss: 0.9079
+RMSProp test loss: 0.9123
+Adam test loss: 0.9166

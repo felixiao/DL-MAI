@@ -1,0 +1,22 @@
+[1673166566.784120] [p9r3n04:133754:0]         mxm.c:196  MXM  WARN  The 'ulimit -s' on the system is set to 'unlimited'. This may have negative performance implications. Please set the stack size to the default value (10240) 
+[1673166566.813350] [p9r3n04:133754:0]         mxm.c:196  MXM  WARN  The 'ulimit -s' on the system is set to 'unlimited'. This may have negative performance implications. Please set the stack size to the default value (10240) 
+4 GPUs are detected : ['/device:GPU:0', '/device:GPU:1', '/device:GPU:2', '/device:GPU:3']
+
+WARNING: The TensorFlow contrib module will not be included in TensorFlow 2.0.
+For more information, please see:
+  * https://github.com/tensorflow/community/blob/master/rfcs/20180907-contrib-sunset.md
+  * https://github.com/tensorflow/addons
+If you depend on functionality not listed there, please file an issue.
+
+total: 50000, 5, 10000
+total cost : 8.688435912132263
+total cost : 3.1277979910373688
+total cost : 2.17848664522171
+total cost : 1.8688332438468933
+total cost : 1.5188818871974945
+total cost : 1.2232729196548462
+total cost : 1.010225623846054
+total cost : 0.8632232844829559
+total cost : 0.7422124296426773
+total cost : 0.6490420326590538
+--- Training time : 0:00:07.435295 seconds /w 4 GPUs ---
